@@ -135,7 +135,7 @@ async function conversation(
   });
 
   await formatSelection.answerCallbackQuery({
-    text: `Вы выбрали формат: ${FORMAT_TYPES[formatType]}`,
+    text: `Вы выбрали формат: ${FORMAT_TYPES[formatType].label}`,
   });
 
   const creating = await ctx.reply(

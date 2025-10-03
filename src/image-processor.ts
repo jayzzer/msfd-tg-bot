@@ -1,4 +1,5 @@
 import * as fs from "fs/promises";
+import * as path from "path";
 import sharp from "sharp";
 import { MaskOption } from "./masks";
 import type { OutputFormat } from "./types";
@@ -11,6 +12,10 @@ export async function processImage(
 ): Promise<void> {
   let inputSharp: sharp.Sharp | null = null;
   let maskSharp: sharp.Sharp | null = null;
+  const tmpMaskPath = path.join(
+    path.dirname(outputPath),
+    `.__mask_${Date.now()}.png`
+  );
 
   try {
     // Создаём один инстанс sharp для входного изображения
@@ -49,7 +54,7 @@ export async function processImage(
       cropTop = Math.floor((originalHeight - cropHeight) / 2);
     }
 
-    // Масштабируем маску
+    // Масштабируем маску и сохраняем во временный файл
     maskSharp = sharp(mask.path);
     const originalMaskMetadata = await maskSharp.metadata();
     const originalMaskWidth = originalMaskMetadata.width || 200;
@@ -60,10 +65,10 @@ export async function processImage(
     const maskWidth = Math.floor(format.width * scale);
     const maskHeight = Math.floor(maskWidth * maskAspectRatio);
 
-    const resizedMaskBuffer = await maskSharp
+    await maskSharp
       .resize(maskWidth, maskHeight, { fit: "fill" })
       .png()
-      .toBuffer();
+      .toFile(tmpMaskPath);
 
     const maskLeft = Math.floor((format.width - maskWidth) / 2);
     const maskTop = Math.max(0, format.height - maskHeight);
@@ -72,17 +77,12 @@ export async function processImage(
       `Mask positioned at: ${maskLeft}, ${maskTop} (${maskWidth}x${maskHeight})`
     );
 
-    // Формируем итоговое изображение без промежуточных toBuffer()
+    // Формируем итоговое изображение
     await inputSharp
       .clone()
-      .extract({
-        left: cropLeft,
-        top: cropTop,
-        width: cropWidth,
-        height: cropHeight,
-      })
+      .extract({ left: cropLeft, top: cropTop, width: cropWidth, height: cropHeight })
       .resize(format.width, format.height, { fit: "fill" })
-      .composite([{ input: resizedMaskBuffer, top: maskTop, left: maskLeft }])
+      .composite([{ input: tmpMaskPath, top: maskTop, left: maskLeft }])
       .jpeg({ quality: 95 })
       .toFile(outputPath);
 
@@ -91,7 +91,11 @@ export async function processImage(
     console.error("Error processing image:", error);
     throw error;
   } finally {
-    // Явно уничтожаем пайплайны, чтобы освободить память libvips
+    // Удаляем временный файл маски
+    try {
+      await fs.unlink(tmpMaskPath);
+    } catch {}
+    // Явно уничтожаем пайплайны
     inputSharp?.destroy();
     maskSharp?.destroy();
   }
