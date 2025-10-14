@@ -27,4 +27,8 @@ export const masks: Record<UserType, MaskOption> = {
     path: path.join(__dirname, "../assets/masks/participant.png"),
     scale: 1,
   },
+  organizer: {
+    path: path.join(__dirname, "../assets/masks/organizer.png"),
+    scale: 1,
+  },
 };

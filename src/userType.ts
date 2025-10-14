@@ -5,7 +5,8 @@ export type UserType =
   | "expert"
   | "model"
   | "artist"
-  | "participant";
+  | "participant"
+  | "organizer";
 
 export const USER_TYPES: Record<UserType, { label: string }> = {
   designer: {
@@ -20,6 +21,9 @@ export const USER_TYPES: Record<UserType, { label: string }> = {
   artist: {
     label: "Артист",
   },
+  organizer: {
+    label: "Организатор",
+  },
   participant: {
     label: "Участник",
   },
@@ -30,15 +34,17 @@ const USER_TYPE_INLINE_KEYBOARD_BUTTONS_LAYOUT: UserType[][] = [
   ["model"],
   ["artist"],
   ["participant"],
+  ["organizer"],
 ];
 
 export const USER_TYPE_INLINE_KEYBOARD_BUTTONS: InlineKeyboardButton[][] =
-  USER_TYPE_INLINE_KEYBOARD_BUTTONS_LAYOUT.map<InlineKeyboardButton[]>((columns) =>
-    columns.map<InlineKeyboardButton>((column) => {
-      const foundUserType = USER_TYPES[column];
-      return {
-        text: foundUserType.label,
-        callback_data: column,
-      };
-    })
+  USER_TYPE_INLINE_KEYBOARD_BUTTONS_LAYOUT.map<InlineKeyboardButton[]>(
+    (columns) =>
+      columns.map<InlineKeyboardButton>((column) => {
+        const foundUserType = USER_TYPES[column];
+        return {
+          text: foundUserType.label,
+          callback_data: column,
+        };
+      })
   );
